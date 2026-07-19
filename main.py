@@ -12,6 +12,7 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from fastapi.middleware.cors import CORSMiddleware
 
 from checkpoints import CHECKPOINTS, build_checkpoint_prompt
 
@@ -34,6 +35,21 @@ except ImportError:
 
 
 app = FastAPI(title="Plan Pre-mortem API")
+
+
+
+origins = [
+    "http://localhost:5173",
+    "https://ai-premortem.vercel.app",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 CHECKPOINT_TIMEOUT_SECONDS = float(os.getenv("CHECKPOINT_TIMEOUT_SECONDS", "45"))
 # Groq's free plan makes this a useful out-of-the-box choice for local demos.

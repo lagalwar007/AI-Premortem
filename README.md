@@ -13,13 +13,13 @@ AI-powered pre-mortem planning simulator that surfaces likely failure modes and 
 ## Current project structure
 
 - `backend/` — FastAPI service exposing the `/premortem` SSE endpoint
-  - `backend/main.py` — streaming API entry point
-  - `backend/checkpoints.py` — shared checkpoint prompts and definitions
+    - `backend/main.py` — streaming API entry point
+    - `backend/checkpoints.py` — shared checkpoint prompts and definitions
 - `frontend/` — React + TypeScript UI built with Vite and React Flow
-  - `frontend/src/App.tsx` — app shell, theme toggle, sample plans, and form controls
-  - `frontend/src/PremortemFlow.tsx` — streaming graph UI
-  - `frontend/src/premortemGraph.ts` — pure graph derivation logic used by the UI and tests
-  - `frontend/src/App.test.tsx` and `frontend/src/PremortemFlow.test.tsx` — Vitest coverage
+    - `frontend/src/App.tsx` — app shell, theme toggle, sample plans, and form controls
+    - `frontend/src/PremortemFlow.tsx` — streaming graph UI
+    - `frontend/src/premortemGraph.ts` — pure graph derivation logic used by the UI and tests
+    - `frontend/src/App.test.tsx` and `frontend/src/PremortemFlow.test.tsx` — Vitest coverage
 - `presentation/` — pitch deck and product narrative
 
 ## Requirements

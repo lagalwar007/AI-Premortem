@@ -1,0 +1,14 @@
+# Local credentials and environment configuration
+.env
+.env.*
+!.env.example
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+
+# Local development artifacts
+.DS_Store
+
+#docs
+presentation

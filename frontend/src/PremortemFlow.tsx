@@ -10,6 +10,7 @@ import {
     type Node,
     type NodeProps,
 } from "@xyflow/react";
+import { API_END_POINT, API_PORT, API_URL } from "./config";
 
 // ---- API payload shapes -----------------------------------------------
 // These mirror the SSE events emitted by POST /premortem exactly:
@@ -133,7 +134,11 @@ function severityTone(severity: number) {
     ][level - 1];
 }
 
-function matchScore(failure: FailureMode, checkpoint: string, risk: CriticalRisk): number {
+function matchScore(
+    failure: FailureMode,
+    checkpoint: string,
+    risk: CriticalRisk,
+): number {
     const sourceDescription = risk.source_failure_description?.toLowerCase();
     const description = failure.description.toLowerCase();
     if (sourceDescription && description === sourceDescription) return 10_000;
@@ -219,8 +224,7 @@ function buildGraph(
 
         const failures = result?.failures ?? [];
         if (failures.length > 0) {
-            const startOffset =
-                -((failures.length - 1) * FAILURE_ROW_STEP) / 2;
+            const startOffset = -((failures.length - 1) * FAILURE_ROW_STEP) / 2;
             failures.forEach((failure, failureIndex) => {
                 const failureId = `${checkpointId}-failure-${failureIndex}`;
                 nodes.push({
@@ -364,7 +368,8 @@ function CheckpointNode({ data }: NodeProps<Node<CheckpointNodeData>>) {
 function FailureNode({ data }: NodeProps<Node<FailureNodeData>>) {
     const failure = data;
     const tone = severityTone(failure.severity);
-    const tilt = CARD_TILTS[Math.abs(hash(failure.description)) % CARD_TILTS.length];
+    const tilt =
+        CARD_TILTS[Math.abs(hash(failure.description)) % CARD_TILTS.length];
 
     return (
         <div
@@ -475,14 +480,12 @@ const nodeTypes = {
 export function PremortemFlow({
     plan,
     model,
-    endpoint = "/premortem",
+    endpoint = `${API_URL}:${API_PORT}/${API_END_POINT}`,
 }: PremortemFlowProps) {
     const [checkpointResults, setCheckpointResults] = useState<
         CheckpointResult[]
     >([]);
-    const [criticalRisk, setCriticalRisk] = useState<CriticalRisk | null>(
-        null,
-    );
+    const [criticalRisk, setCriticalRisk] = useState<CriticalRisk | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [streamError, setStreamError] = useState<string>();
     const [selectedFailure, setSelectedFailure] = useState<FailureNodeData>();
@@ -495,7 +498,8 @@ export function PremortemFlow({
     // The graph is fully derived — no manual node/edge surgery, so it can
     // never drift out of sync with the underlying checkpoint data.
     const { nodes, edges } = useMemo(
-        () => buildGraph(plan, checkpointResults, criticalRisk, revealMitigation),
+        () =>
+            buildGraph(plan, checkpointResults, criticalRisk, revealMitigation),
         [plan, checkpointResults, criticalRisk, revealMitigation],
     );
 

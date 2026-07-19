@@ -1,20 +1,18 @@
+import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@xyflow/react", () => {
-    const React = require("react");
-    return {
-        Controls: () => null,
-        Handle: () => null,
-        Position: { Left: "left", Right: "right" },
-        ReactFlow: ({ children }: { children?: React.ReactNode }) => (
-            <div>{children}</div>
-        ),
-        ReactFlowProvider: ({ children }: { children?: React.ReactNode }) => (
-            <>{children}</>
-        ),
-        useReactFlow: () => ({ fitView: vi.fn() }),
-    };
-});
+vi.mock("@xyflow/react", () => ({
+    Controls: () => null,
+    Handle: () => null,
+    Position: { Left: "left", Right: "right" },
+    ReactFlow: ({ children }: { children?: React.ReactNode }) => (
+        <div>{children}</div>
+    ),
+    ReactFlowProvider: ({ children }: { children?: React.ReactNode }) => (
+        <>{children}</>
+    ),
+    useReactFlow: () => ({ fitView: vi.fn() }),
+}));
 
 import { buildGraph } from "../lib/premortemGraph";
 

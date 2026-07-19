@@ -1,6 +1,82 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import PremortemFlow from "./PremortemFlow";
+
+type Theme = "dark" | "light";
+const THEME_STORAGE_KEY = "premortem-theme";
+
+function getInitialTheme(): Theme {
+    if (typeof window === "undefined") return "dark";
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "dark" || stored === "light") return stored;
+    // Case files default to the lamp-lit dark room, but respect a light
+    // preference if the OS/browser already says so.
+    return window.matchMedia("(prefers-color-scheme: light)").matches
+        ? "light"
+        : "dark";
+}
+
+function SunIcon() {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+        >
+            <circle cx="12" cy="12" r="4.2" />
+            <path
+                strokeLinecap="round"
+                d="M12 2.5v2.4M12 19.1v2.4M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7"
+            />
+        </svg>
+    );
+}
+
+function MoonIcon() {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M20.2 14.7A8.4 8.4 0 1 1 9.3 3.8a6.7 6.7 0 0 0 10.9 10.9z"
+            />
+        </svg>
+    );
+}
+
+function ThemeToggle({
+    theme,
+    onToggle,
+}: {
+    theme: Theme;
+    onToggle: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            className="theme-toggle"
+            aria-label={
+                theme === "dark"
+                    ? "Switch to light mode"
+                    : "Switch to dark mode"
+            }
+            title={
+                theme === "dark"
+                    ? "Switch to light mode"
+                    : "Switch to dark mode"
+            }
+        >
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+        </button>
+    );
+}
 
 const examplePlans = [
     {
@@ -30,34 +106,49 @@ const examplePlans = [
 ];
 
 const models = [
-    { id: "llama-3.3-70b-versatile", label: "Groq — Llama 3.3 70B (free tier)" },
+    {
+        id: "llama-3.3-70b-versatile",
+        label: "Groq — Llama 3.3 70B (free tier)",
+    },
     { id: "llama-3.1-8b-instant", label: "Groq — Llama 3.1 8B (free tier)" },
-    { id: "gpt-4.1-mini", label: "OpenAI — GPT-4.1 mini" },
-    { id: "gpt-4.1", label: "OpenAI — GPT-4.1" },
-    { id: "gemini-2.5-flash", label: "Google — Gemini 2.5 Flash" },
-    { id: "gemini-2.5-pro", label: "Google — Gemini 2.5 Pro" },
 ];
 
 export default function App() {
     const [plan, setPlan] = useState("");
     const [model, setModel] = useState(models[0].id);
+    const [theme, setTheme] = useState<Theme>(getInitialTheme);
+
+    useEffect(() => {
+        document.documentElement.dataset.theme = theme;
+        window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    }, [theme]);
 
     return (
-        <main className="bg-office min-h-screen px-4 py-10 text-[var(--color-page)] sm:px-10">
-            <div className="mx-auto max-w-7xl space-y-8">
-                <header className="animate-rise">
-                    <div className="flex items-center gap-2 font-[var(--font-type)] text-[0.7rem] uppercase tracking-[0.32em] text-[var(--color-brass)]">
-                        <span className="animate-lamp-pulse inline-block size-1.5 rounded-full bg-[var(--color-brass)]" />
-                        Case file · open
+        <main className="bg-office min-h-screen px-4 py-10 text-[var(--color-page)] sm:px-10 3xl:px-16 4k:px-24">
+            <div className="mx-auto max-w-7xl space-y-8 3xl:max-w-[1720px] 4k:max-w-[2200px]">
+                <header className="animate-rise flex items-start justify-between gap-4">
+                    <div>
+                        <div className="flex items-center gap-2 font-[var(--font-type)] text-[0.7rem] uppercase tracking-[0.32em] text-[var(--color-brass)]">
+                            <span className="animate-lamp-pulse inline-block size-1.5 rounded-full bg-[var(--color-brass)]" />
+                            Case file · open
+                        </div>
+                        <h1 className="text-glow-brass text-fluid-hero mt-3 font-[var(--font-headline)] italic tracking-tight text-[var(--color-page)]">
+                            Pre-mortem
+                        </h1>
+                        <p className="mt-3 max-w-2xl font-[var(--font-type)] text-sm leading-relaxed text-[var(--color-page-dim)] 4k:text-base">
+                            Pin the plan to the board. We'll work the timeline
+                            forward and surface what's most likely to go wrong
+                            before it does.
+                        </p>
                     </div>
-                    <h1 className="text-glow-brass mt-3 font-[var(--font-headline)] text-4xl italic tracking-tight text-[var(--color-page)] sm:text-5xl">
-                        Pre-mortem
-                    </h1>
-                    <p className="mt-3 max-w-2xl font-[var(--font-type)] text-sm leading-relaxed text-[var(--color-page-dim)]">
-                        Pin the plan to the board. We'll work the timeline
-                        forward and surface what's most likely to go wrong
-                        before it does.
-                    </p>
+                    <ThemeToggle
+                        theme={theme}
+                        onToggle={() =>
+                            setTheme((current) =>
+                                current === "dark" ? "light" : "dark",
+                            )
+                        }
+                    />
                 </header>
 
                 <section
@@ -83,7 +174,7 @@ export default function App() {
                 </section>
 
                 <div
-                    className="animate-rise grid gap-6 sm:grid-cols-[220px_1fr]"
+                    className="animate-rise grid gap-6 sm:grid-cols-[220px_1fr] 3xl:grid-cols-[280px_1fr]"
                     style={{ animationDelay: "140ms" }}
                 >
                     <label className="block">
@@ -93,7 +184,7 @@ export default function App() {
                         <select
                             value={model}
                             onChange={(event) => setModel(event.target.value)}
-                            className="w-full rounded-sm border border-[var(--color-brass-deep)]/40 bg-[var(--color-parchment)] px-3 py-2.5 font-[var(--font-type)] text-sm text-[var(--color-ink)] shadow-sm outline-none transition focus:border-[var(--color-brass)] focus:ring-4 focus:ring-[var(--color-brass-wash)]"
+                            className="w-full rounded-sm border border-[var(--color-brass-deep)]/40 bg-[var(--color-parchment)] px-3 py-2.5 font-[var(--font-type)] text-sm text-[var(--color-ink)] shadow-sm outline-none transition focus:border-[var(--color-brass)] focus:ring-4 focus:ring-[var(--color-brass-wash)] 4k:py-3.5 4k:text-base"
                         >
                             {models.map((option) => (
                                 <option key={option.id} value={option.id}>
@@ -111,12 +202,15 @@ export default function App() {
                             value={plan}
                             onChange={(event) => setPlan(event.target.value)}
                             placeholder="Example: Launch a beta with 20 design partners by the end of Q1…"
-                            className="min-h-32 w-full rounded-sm border border-[var(--color-brass-deep)]/40 bg-[var(--color-parchment)] p-4 font-[var(--font-type)] text-sm leading-relaxed text-[var(--color-ink)] shadow-sm outline-none transition placeholder:text-[var(--color-ink-soft)] focus:border-[var(--color-brass)] focus:ring-4 focus:ring-[var(--color-brass-wash)]"
+                            className="min-h-32 w-full rounded-sm border border-[var(--color-brass-deep)]/40 bg-[var(--color-parchment)] p-4 font-[var(--font-type)] text-sm leading-relaxed text-[var(--color-ink)] shadow-sm outline-none transition placeholder:text-[var(--color-ink-soft)] focus:border-[var(--color-brass)] focus:ring-4 focus:ring-[var(--color-brass-wash)] 4k:min-h-40 4k:p-5 4k:text-base"
                         />
                     </label>
                 </div>
 
-                <div className="animate-rise" style={{ animationDelay: "200ms" }}>
+                <div
+                    className="animate-rise"
+                    style={{ animationDelay: "200ms" }}
+                >
                     <PremortemFlow plan={plan} model={model} />
                 </div>
             </div>

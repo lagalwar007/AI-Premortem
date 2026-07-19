@@ -30,6 +30,12 @@
     --color-blood: #8f2a24;
     --color-blood-deep: #601c18;
 
+    /* Extra breakpoints beyond Tailwind's default 1536px ceiling, so large
+       monitors and 4K displays get a layout tuned for them rather than a
+       stretched version of the laptop layout. */
+    --breakpoint-3xl: 1920px;
+    --breakpoint-4k: 2560px;
+
     --animate-rise: rise 640ms cubic-bezier(0.16, 1, 0.3, 1) both;
     --animate-pin-in: pin-in 460ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
     --animate-lamp-pulse: lamp-pulse 1.8s ease-in-out infinite;
@@ -49,7 +55,8 @@
     @keyframes pin-in {
         from {
             opacity: 0;
-            transform: translateY(-10px) scale(0.9) rotate(var(--card-tilt, 0deg));
+            transform: translateY(-10px) scale(0.9)
+                rotate(var(--card-tilt, 0deg));
         }
         to {
             opacity: 1;
@@ -82,6 +89,38 @@
 body {
     background: var(--color-office);
     color: var(--color-page);
+    transition:
+        background-color 220ms ease,
+        color 220ms ease;
+}
+
+/* --- Light mode ----------------------------------------------------------
+   Same case-file metaphor, daylight instead of a desk lamp: the board
+   reads as sunlit wood, cards stay parchment, ink stays ink. Every
+   component already renders purely from var(--color-*), so flipping
+   [data-theme="light"] on <html> is the only change needed anywhere. */
+:root[data-theme="light"] {
+    --color-office: #f3ead2;
+    --color-office-2: #ece0bd;
+    --color-cork: #b98f5c;
+    --color-cork-deep: #8f6a3c;
+    --color-parchment: #fbf5e6;
+    --color-parchment-dim: #f2e6c4;
+    --color-ink: #241c13;
+    --color-ink-soft: #6b5c42;
+    --color-page: #241c13;
+    --color-page-dim: #5b4d38;
+    --color-page-faint: #8a7a5c;
+    --color-brass: #a9701c;
+    --color-brass-deep: #7c4f10;
+    --color-brass-wash: #f0dba6;
+    --color-moss: #4c6f38;
+    --color-moss-deep: #33461f;
+    --color-dusk: #2f6469;
+    --color-dusk-deep: #1f4448;
+    --color-rust: #a4491c;
+    --color-blood: #8f2a24;
+    --color-blood-deep: #601c18;
 }
 
 /* The office at large: a warm vignette as if lit by a single desk lamp
@@ -102,18 +141,110 @@ body {
         linear-gradient(180deg, var(--color-office-2), var(--color-office) 40%);
 }
 
+:root[data-theme="light"] .bg-office {
+    background-image:
+        radial-gradient(
+            ellipse 1100px 620px at 18% -8%,
+            rgba(169, 112, 28, 0.12),
+            transparent 60%
+        ),
+        radial-gradient(
+            ellipse 800px 500px at 100% 10%,
+            rgba(47, 100, 105, 0.06),
+            transparent 55%
+        ),
+        linear-gradient(180deg, var(--color-office-2), var(--color-office) 40%);
+}
+
 /* The board itself: cork grain built from tiled speckle dots, framed by a
    soft lamp glow from the top-left. */
 .bg-corkboard {
     background-color: var(--color-cork);
     background-image:
-        radial-gradient(circle at 12% 22%, rgba(0, 0, 0, 0.26) 1px, transparent 1.6px),
-        radial-gradient(circle at 68% 8%, rgba(0, 0, 0, 0.2) 1px, transparent 1.5px),
-        radial-gradient(circle at 40% 62%, rgba(0, 0, 0, 0.24) 1px, transparent 1.6px),
-        radial-gradient(circle at 85% 78%, rgba(0, 0, 0, 0.2) 1px, transparent 1.5px),
-        radial-gradient(circle at 22% 88%, rgba(255, 255, 255, 0.045) 1px, transparent 1.4px),
-        radial-gradient(circle at 92% 35%, rgba(255, 255, 255, 0.04) 1px, transparent 1.4px),
-        radial-gradient(ellipse 1000px 640px at 8% -6%, rgba(215, 155, 61, 0.14), transparent 62%),
+        radial-gradient(
+            circle at 12% 22%,
+            rgba(0, 0, 0, 0.26) 1px,
+            transparent 1.6px
+        ),
+        radial-gradient(
+            circle at 68% 8%,
+            rgba(0, 0, 0, 0.2) 1px,
+            transparent 1.5px
+        ),
+        radial-gradient(
+            circle at 40% 62%,
+            rgba(0, 0, 0, 0.24) 1px,
+            transparent 1.6px
+        ),
+        radial-gradient(
+            circle at 85% 78%,
+            rgba(0, 0, 0, 0.2) 1px,
+            transparent 1.5px
+        ),
+        radial-gradient(
+            circle at 22% 88%,
+            rgba(255, 255, 255, 0.045) 1px,
+            transparent 1.4px
+        ),
+        radial-gradient(
+            circle at 92% 35%,
+            rgba(255, 255, 255, 0.04) 1px,
+            transparent 1.4px
+        ),
+        radial-gradient(
+            ellipse 1000px 640px at 8% -6%,
+            rgba(215, 155, 61, 0.14),
+            transparent 62%
+        ),
+        linear-gradient(180deg, var(--color-cork), var(--color-cork-deep));
+    background-size:
+        34px 34px,
+        41px 41px,
+        37px 37px,
+        44px 44px,
+        39px 39px,
+        46px 46px,
+        100% 100%,
+        100% 100%;
+}
+
+:root[data-theme="light"] .bg-corkboard {
+    background-image:
+        radial-gradient(
+            circle at 12% 22%,
+            rgba(0, 0, 0, 0.16) 1px,
+            transparent 1.6px
+        ),
+        radial-gradient(
+            circle at 68% 8%,
+            rgba(0, 0, 0, 0.13) 1px,
+            transparent 1.5px
+        ),
+        radial-gradient(
+            circle at 40% 62%,
+            rgba(0, 0, 0, 0.15) 1px,
+            transparent 1.6px
+        ),
+        radial-gradient(
+            circle at 85% 78%,
+            rgba(0, 0, 0, 0.13) 1px,
+            transparent 1.5px
+        ),
+        radial-gradient(
+            circle at 22% 88%,
+            rgba(255, 255, 255, 0.09) 1px,
+            transparent 1.4px
+        ),
+        radial-gradient(
+            circle at 92% 35%,
+            rgba(255, 255, 255, 0.08) 1px,
+            transparent 1.4px
+        ),
+        radial-gradient(
+            ellipse 1000px 640px at 8% -6%,
+            rgba(255, 244, 214, 0.35),
+            transparent 62%
+        ),
         linear-gradient(180deg, var(--color-cork), var(--color-cork-deep));
     background-size:
         34px 34px,
@@ -148,4 +279,37 @@ body {
 }
 .react-flow__attribution {
     display: none;
+}
+
+/* Scales past Tailwind's normal text-5xl ceiling on very large displays,
+   so the hero title doesn't look stranded on a 4K monitor. */
+.text-fluid-hero {
+    font-size: clamp(2.25rem, 1.35rem + 3.2vw, 5rem);
+}
+
+/* Sun/moon theme toggle, styled as a small brass switch rather than a
+   default checkbox. */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 2px;
+    border: 1px solid
+        color-mix(in srgb, var(--color-brass-deep) 55%, transparent);
+    background: var(--color-cork-deep);
+    color: var(--color-brass);
+    transition:
+        background-color 180ms ease,
+        color 180ms ease,
+        transform 180ms ease;
+}
+.theme-toggle:hover {
+    background: var(--color-brass-wash);
+    transform: translateY(-1px);
+}
+.theme-toggle svg {
+    width: 1.05rem;
+    height: 1.05rem;
 }

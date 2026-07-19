@@ -623,7 +623,7 @@ export function PremortemFlow({
                     </span>
                 )}
             </div>
-            <div className="bg-corkboard relative mt-4 h-[720px] overflow-hidden rounded-[3px] border-2 border-[var(--color-brass-deep)]/40 shadow-[inset_0_0_60px_rgba(0,0,0,0.55)]">
+            <div className="bg-corkboard relative mt-4 h-[clamp(440px,70vh,760px)] overflow-hidden rounded-[3px] border-2 border-[var(--color-brass-deep)]/40 shadow-[inset_0_0_60px_rgba(0,0,0,0.55)] 3xl:h-[clamp(520px,72vh,980px)] 4k:h-[clamp(600px,74vh,1300px)]">
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}

@@ -298,7 +298,7 @@ body {
     border-radius: 2px;
     border: 1px solid
         color-mix(in srgb, var(--color-brass-deep) 55%, transparent);
-    background: var(--color-cork-deep);
+    background: white;
     color: var(--color-brass);
     transition:
         background-color 180ms ease,

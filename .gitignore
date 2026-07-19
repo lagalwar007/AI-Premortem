@@ -1,11 +1,11 @@
 # Local credentials and environment configuration
-.env
+backend/.env
 .env.*
 !.env.example
 
 # Python artifacts
-__pycache__/
-*.py[cod]
+backend/__pycache__/
+backend/*.py[cod]
 
 # Local development artifacts
 .DS_Store

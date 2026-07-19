@@ -10,59 +10,28 @@ import {
     type Node,
     type NodeProps,
 } from "@xyflow/react";
-import { API_END_POINT, API_PORT, API_URL } from "./config";
+import { API_END_POINT, API_PORT, API_URL } from "../../../config";
+import {
+    buildGraph,
+    CHECKPOINTS,
+    type CheckpointResult,
+    type CheckpointStatus,
+    type CheckpointNodeData,
+    type CriticalRisk,
+    type FailureMode,
+    type FailureNodeData,
+    type PlanNodeData,
+} from "../lib/premortemGraph";
 
 // ---- API payload shapes -----------------------------------------------
 // These mirror the SSE events emitted by POST /premortem exactly:
 //   event: checkpoint      -> { checkpoint, failure_modes: FailureMode[], error? }
 //   event: critical_risk   -> { critical_risk: CriticalRisk | null, error? }
 
-type Probability = "low" | "medium" | "high";
-
-export type FailureMode = {
-    description: string;
-    probability: Probability;
-    severity: number;
-    mitigation: string;
-};
-
 type CheckpointEvent = {
     checkpoint: string;
     failure_modes: FailureMode[];
     error?: string;
-};
-
-type CriticalRisk = {
-    description: string;
-    why_overlooked: string;
-    severity: number;
-    mitigation: string;
-    source_checkpoint?: string;
-    source_failure_description?: string;
-};
-
-type FailureNodeData = FailureMode & {
-    checkpoint: string;
-    isCritical: boolean;
-    onReveal: (failure: FailureNodeData) => void;
-};
-
-type CheckpointStatus = "queued" | "analyzing" | "complete" | "error";
-
-/** One row of app state per checkpoint — the single source of truth the whole tree is derived from. */
-type CheckpointResult = {
-    checkpoint: string;
-    status: CheckpointStatus;
-    failures: FailureMode[];
-};
-
-type CheckpointNodeData = {
-    name: string;
-    status: CheckpointStatus;
-};
-
-type PlanNodeData = {
-    plan: string;
 };
 
 type PremortemFlowProps = {
@@ -71,8 +40,6 @@ type PremortemFlowProps = {
     /** Defaults to the FastAPI endpoint served from the same origin. */
     endpoint?: string;
 };
-
-const CHECKPOINTS = ["Month 1", "Month 6", "Year 1"];
 
 // ---- Layout constants ---------------------------------------------------
 // Checkpoints run down a single vertical column. The plan sits to the left,
@@ -87,41 +54,13 @@ const CHECKPOINTS = ["Month 1", "Month 6", "Year 1"];
 // (see FailureNode), never on the Node object's own `className`/`style` —
 // that lands on the wrapper React Flow uses for its own position transform,
 // and a competing CSS `transform` there silently breaks positioning.
-const PLAN_X = 40;
-const CHECKPOINT_X = 380;
-const CHECKPOINT_GAP_Y = 420;
-const FAILURE_X = CHECKPOINT_X + 420;
 const FAILURE_CARD_WIDTH = 272;
 const FAILURE_CARD_HEIGHT = 100;
-const FAILURE_ROW_STEP = FAILURE_CARD_HEIGHT + 30;
-const CALLOUT_X = FAILURE_X + FAILURE_CARD_WIDTH + 140;
-
-// Plan is vertically centred on the checkpoint column (aligned with the
-// middle checkpoint when there are three, as in the reference design).
-const PLAN_Y = Math.floor((CHECKPOINTS.length - 1) / 2) * CHECKPOINT_GAP_Y;
 
 // Deterministic small tilt per card index, so the board reads as pinned
 // index cards rather than a rigid grid — alternates a few fixed angles
 // instead of anything random (random would re-roll on every re-render).
 const CARD_TILTS = [-2.4, 1.8, -1.2, 2.2, -1.8, 1.2];
-
-function checkpointY(index: number) {
-    return index * CHECKPOINT_GAP_Y;
-}
-
-function stringEdge(id: string, source: string, target: string): Edge {
-    return {
-        id,
-        source,
-        target,
-        type: "default",
-        style: {
-            stroke: "var(--color-blood)",
-            strokeWidth: 2,
-            opacity: 0.75,
-        },
-    };
-}
 
 function severityTone(severity: number) {
     const level = Math.max(1, Math.min(5, Number(severity) || 1));
@@ -132,154 +71,6 @@ function severityTone(severity: number) {
         { pin: "var(--color-rust)", label: "severe" },
         { pin: "var(--color-blood)", label: "critical" },
     ][level - 1];
-}
-
-function matchScore(
-    failure: FailureMode,
-    checkpoint: string,
-    risk: CriticalRisk,
-): number {
-    const sourceDescription = risk.source_failure_description?.toLowerCase();
-    const description = failure.description.toLowerCase();
-    if (sourceDescription && description === sourceDescription) return 10_000;
-    if (
-        sourceDescription &&
-        (description.includes(sourceDescription) ||
-            sourceDescription.includes(description))
-    )
-        return 5_000;
-
-    const riskWords = new Set(
-        risk.description.toLowerCase().match(/[a-z0-9]{4,}/g) ?? [],
-    );
-    const overlap = (description.match(/[a-z0-9]{4,}/g) ?? []).filter((word) =>
-        riskWords.has(word),
-    ).length;
-    return overlap + (risk.source_checkpoint === checkpoint ? 1 : 0);
-}
-
-function findBestMatch(
-    results: CheckpointResult[],
-    criticalRisk: CriticalRisk,
-): { checkpointIndex: number; failureIndex: number } | null {
-    let best: { checkpointIndex: number; failureIndex: number } | null = null;
-    let bestScore = -Infinity;
-    results.forEach((result, checkpointIndex) => {
-        result.failures.forEach((failure, failureIndex) => {
-            const score = matchScore(failure, result.checkpoint, criticalRisk);
-            if (score > bestScore) {
-                bestScore = score;
-                best = { checkpointIndex, failureIndex };
-            }
-        });
-    });
-    return best;
-}
-
-// ---- Pure derivation: (plan, results, criticalRisk) -> (nodes, edges) --
-// This is the only place layout math happens. Nothing else in the
-// component mutates nodes/edges by hand, so there's no way for the graph
-// to drift out of sync with the underlying data.
-function buildGraph(
-    plan: string,
-    results: CheckpointResult[],
-    criticalRisk: CriticalRisk | null,
-    onReveal: (failure: FailureNodeData) => void,
-): { nodes: Node[]; edges: Edge[] } {
-    const nodes: Node[] = [
-        {
-            id: "plan",
-            type: "plan",
-            position: { x: PLAN_X, y: PLAN_Y },
-            data: { plan } satisfies PlanNodeData,
-            draggable: false,
-            selectable: false,
-        },
-    ];
-    const edges: Edge[] = [];
-
-    // Find the single failure card that best matches the critical risk, so
-    // we can highlight it and anchor the callout near it.
-    const bestMatch = criticalRisk
-        ? findBestMatch(results, criticalRisk)
-        : null;
-
-    CHECKPOINTS.forEach((name, checkpointIndex) => {
-        const checkpointId = `checkpoint-${checkpointIndex}`;
-        const result = results[checkpointIndex];
-        const status: CheckpointStatus = result?.status ?? "queued";
-        const y = checkpointY(checkpointIndex);
-
-        nodes.push({
-            id: checkpointId,
-            type: "checkpoint",
-            position: { x: CHECKPOINT_X, y },
-            data: { name, status } satisfies CheckpointNodeData,
-            targetPosition: Position.Left,
-            sourcePosition: Position.Right,
-            draggable: false,
-            selectable: false,
-        });
-        edges.push(stringEdge(`plan-${checkpointId}`, "plan", checkpointId));
-
-        const failures = result?.failures ?? [];
-        if (failures.length > 0) {
-            const startOffset = -((failures.length - 1) * FAILURE_ROW_STEP) / 2;
-            failures.forEach((failure, failureIndex) => {
-                const failureId = `${checkpointId}-failure-${failureIndex}`;
-                nodes.push({
-                    id: failureId,
-                    type: "failure",
-                    position: {
-                        x: FAILURE_X,
-                        y: y + startOffset + failureIndex * FAILURE_ROW_STEP,
-                    },
-                    data: {
-                        ...failure,
-                        checkpoint: name,
-                        isCritical:
-                            bestMatch?.checkpointIndex === checkpointIndex &&
-                            bestMatch?.failureIndex === failureIndex,
-                        onReveal,
-                    } satisfies FailureNodeData,
-                });
-                edges.push(
-                    stringEdge(
-                        `${checkpointId}-failure-edge-${failureIndex}`,
-                        checkpointId,
-                        failureId,
-                    ),
-                );
-            });
-        } else if (status === "analyzing") {
-            // A lightweight placeholder — this checkpoint's failure modes
-            // haven't streamed in yet.
-            nodes.push({
-                id: `${checkpointId}-pending`,
-                type: "pending",
-                position: { x: FAILURE_X, y },
-                data: {},
-                draggable: false,
-                selectable: false,
-            });
-        }
-    });
-
-    if (criticalRisk) {
-        const anchorY = bestMatch
-            ? checkpointY(bestMatch.checkpointIndex)
-            : PLAN_Y;
-        nodes.push({
-            id: "critical-risk-callout",
-            type: "criticalCallout",
-            position: { x: CALLOUT_X, y: anchorY },
-            data: criticalRisk,
-            draggable: false,
-            selectable: false,
-        });
-    }
-
-    return { nodes, edges };
 }
 
 function createLoadingState(): CheckpointResult[] {
@@ -383,6 +174,7 @@ function FailureNode({ data }: NodeProps<Node<FailureNodeData>>) {
                     failure.onReveal(failure);
             }}
             title={failure.description}
+            aria-label={`Reveal mitigation for ${data.description}`}
             style={
                 {
                     width: FAILURE_CARD_WIDTH,

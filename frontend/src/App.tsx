@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import PremortemFlow from "./PremortemFlow";
+import PremortemFlow from "./features/premortem/components/PremortemFlow";
 
 type Theme = "dark" | "light";
 const THEME_STORAGE_KEY = "premortem-theme";
@@ -50,7 +50,7 @@ function MoonIcon() {
     );
 }
 
-function ThemeToggle({
+export function ThemeToggle({
     theme,
     onToggle,
 }: {

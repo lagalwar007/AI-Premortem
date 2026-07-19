@@ -480,7 +480,7 @@ const nodeTypes = {
 export function PremortemFlow({
     plan,
     model,
-    endpoint = `${API_URL}:${API_PORT}${API_END_POINT}`,
+    endpoint = `${API_URL}/${API_END_POINT}`,
 }: PremortemFlowProps) {
     const [checkpointResults, setCheckpointResults] = useState<
         CheckpointResult[]
